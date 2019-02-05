@@ -7,7 +7,7 @@ NAME="blah"
 DOMAIN="hotdog.com"
 KEY="no"
 export DEBIAN_FRONTEND=noninteractive
-PW=P@ssW0rD
+PW="P@ssW0rD"
 
 apt-get update -y&&apt-get install -y vim software-properties-common apache2 phpmyadmin mysql-server php libapache2-mod-php php-mcrypt php-mysql zip default-jre -y&&service mysql restart
 
@@ -135,5 +135,25 @@ send \"\r\"
 expect eof
 ")
 echo "$MULTI"
-#end
 
+PANELDB="multicraft_panel"
+PPASSWDDB="${PW}panel"
+mysql -uroot -p${PW} -e "CREATE DATABASE ${PANELDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+mysql -uroot -p${PW} -e "CREATE USER ${PANELDB}@localhost IDENTIFIED BY '${PPASSWDDB}';"
+mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${PANELDB}.* TO '${PANELDB}'@'localhost';"
+mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
+
+DAEMONDB="multicraft_daemon"
+DPASSWDDB="${PW}daemon"
+mysql -uroot -p${PW} -e "CREATE DATABASE ${DAEMONDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPASSWDDB}';"
+mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
+mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
+
+clear
+echo;echo
+echo "Go to the web panel: http://your.address/multicraft/install.php"
+echo "$PANELDB: $PANELDB / $PPASSWDDB"
+echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
+
+echo
