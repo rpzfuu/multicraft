@@ -82,13 +82,23 @@ service mysql start
 mkdir -p /run/dbus
 dbus-daemon --system
 
+mysql -uroot -p${PW} -e "CREATE DATABASE ${PANELDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+mysql -uroot -p${PW} -e "CREATE USER ${PANELDB}@localhost IDENTIFIED BY '${PPASSWDDB}';"
+mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${PANELDB}.* TO '${PANELDB}'@'localhost';"
+mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
+
+mysql -uroot -p${PW} -e "CREATE DATABASE ${DAEMONDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
+mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPASSWDDB}';"
+mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
+mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
+
 cd ~&&mkdir MulticraftInstllation;cd MulticraftInstllation
 
 wget https://www.multicraft.org/download/linux64 -O multicraft.tar.gz&&tar xvzf multicraft.tar.gz
 
 cd multicraft
 
-sed -i -e '/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon"'"\,/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel"'"\,/' /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
+sed -i -e "/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon'\,/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel'\,/" /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
 sed -i -e '/panel_db_user/ s/root/multicraft_panel/ ; /daemon_db_user/ s/root/multicraft_daemon/' /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
 sed -i -e "/daemon_db_pass/ s/testing/$DPASSWDDB/ ; /panel_db_pass/ s/''/'$PPASSWDDB'/" /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
 
@@ -147,17 +157,11 @@ expect eof
 ")
 echo "$MULTI"
 
-mysql -uroot -p${PW} -e "CREATE DATABASE ${PANELDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
-mysql -uroot -p${PW} -e "CREATE USER ${PANELDB}@localhost IDENTIFIED BY '${PPASSWDDB}';"
-mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${PANELDB}.* TO '${PANELDB}'@'localhost';"
-mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
 
-mysql -uroot -p${PW} -e "CREATE DATABASE ${DAEMONDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
-mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPASSWDDB}';"
-mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
-mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
 sed -i 's/dbUser.*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
 sed -i 's/dbPassword.*/dbPassword = P@ssW0rDdaemon/' /home/minecraft/multicraft/multicraft.conf
+sed -i '/^password/ d' /home/minecraft/multicraft/multicraft.conf
+/home/minecraft/multicraft/bin/multicraft start
 
 clear
 
@@ -168,7 +172,7 @@ echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
 echo
 
 
-/home/minecraft/multicraft/bin/multicraft start
+
 
 
 
