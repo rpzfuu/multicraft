@@ -4,4 +4,4 @@ curl https://raw.githubusercontent.com/se7enack/multicraft/master/multicraftserv
 
 
 Walkthrough video:
-https://www.youtube.com/watch?v=ohv8QXDd8Do
+https://youtu.be/ohv8QXDd8Do
