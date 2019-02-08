@@ -204,15 +204,9 @@ expect eof
 ")
 echo "$MULTI"
 
-
 sed -i 's/dbUser.*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
-sed -i 's/dbPassword.*/dbPassword = P@ssW0rDdaemon/' /home/minecraft/multicraft/multicraft.conf
-sed -i -e "/daemon_password/ s/none/$DPASSWDDB/" /var/www/html/multicraft/protected/config/config.php
-
 sed -i '/^password/ d' /home/minecraft/multicraft/multicraft.conf
-sleep 10
-/home/minecraft/multicraft/bin/multicraft start
-
+sed -i "s/dbPassword.*/dbPassword = $DPASSWDDB/" /home/minecraft/multicraft/multicraft.conf
 clear
 
 echo;echo
@@ -222,4 +216,5 @@ echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
 echo
 
+/home/minecraft/multicraft/bin/multicraft start
 
