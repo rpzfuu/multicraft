@@ -8,6 +8,13 @@ DOMAIN="thewebsite.com"
 KEY="no"
 export DEBIAN_FRONTEND=noninteractive
 PW="P@ssW0rD"
+#
+PANELDB="multicraft_panel"
+PPASSWDDB="${PW}panel"
+#
+DAEMONDB="multicraft_daemon"
+DPASSWDDB="${PW}daemon"
+
 
 apt-get update -y&&apt-get install -y vim software-properties-common apache2 phpmyadmin mysql-server php libapache2-mod-php php-mcrypt php-mysql zip default-jre -y&&service mysql restart
 
@@ -81,6 +88,10 @@ wget https://www.multicraft.org/download/linux64 -O multicraft.tar.gz&&tar xvzf 
 
 cd multicraft
 
+sed -i -e '/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon"'"\,/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel"'"\,/' /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
+sed -i -e '/panel_db_user/ s/root/multicraft_panel/ ; /daemon_db_user/ s/root/multicraft_daemon/' /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
+sed -i -e "/daemon_db_pass/ s/testing/$DPASSWDDB/ ; /panel_db_pass/ s/''/'$PPASSWDDB'/" /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
+
 MULTI=$(expect -c "
 set timeout 10
 spawn ./setup.sh
@@ -136,34 +147,25 @@ expect eof
 ")
 echo "$MULTI"
 
-PANELDB="multicraft_panel"
-PPASSWDDB="${PW}panel"
 mysql -uroot -p${PW} -e "CREATE DATABASE ${PANELDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
 mysql -uroot -p${PW} -e "CREATE USER ${PANELDB}@localhost IDENTIFIED BY '${PPASSWDDB}';"
 mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${PANELDB}.* TO '${PANELDB}'@'localhost';"
 mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
 
-DAEMONDB="multicraft_daemon"
-DPASSWDDB="${PW}daemon"
 mysql -uroot -p${PW} -e "CREATE DATABASE ${DAEMONDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
 mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPASSWDDB}';"
 mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
 mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
 sed -i 's/dbUser.*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
 sed -i 's/dbPassword.*/dbPassword = P@ssW0rDdaemon/' /home/minecraft/multicraft/multicraft.conf
-sed -i 's/## default:.*/## default: mysql:host=127.0.0.1;dbname=multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf.dist
 
 clear
-
 
 echo;echo
 echo "Go to the web panel: http://your.address/multicraft/install.php"
 echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
 echo
-
-/var/www/html/multicraft/protected/config/config.php   
-
 
 
 /home/minecraft/multicraft/bin/multicraft start
