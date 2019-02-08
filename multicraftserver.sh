@@ -2,9 +2,9 @@
 set -e
 
 DAEMONNUM=1
-EMAIL=nate@gmail.com.com
+EMAIL=some@email.com
 NAME="blah"
-DOMAIN="hotdog.com"
+DOMAIN="thewebsite.com"
 KEY="no"
 export DEBIAN_FRONTEND=noninteractive
 PW="P@ssW0rD"
