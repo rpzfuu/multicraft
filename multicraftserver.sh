@@ -16,7 +16,6 @@ gatherEmail () {
 	elif ! [[ $EMAIL =~ $regex ]] ; then
     	gatherEmail
 	fi
-
 }
 gatherDomain () {
 	echo "Enter the FQDN of the server (i.e. thewebsite.com), followed by [ENTER]:";echo -n ">"
@@ -149,7 +148,6 @@ cd multicraft
 
 sed -i -e "/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon'\,/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel'\,/" /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
 sed -i -e '/panel_db_user/ s/root/multicraft_panel/ ; /daemon_db_user/ s/root/multicraft_daemon/' /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
-sed -i -e "/daemon_db_pass/ s/testing/$DPASSWDDB/ ; /panel_db_pass/ s/''/'$PPASSWDDB'/" /root/MulticraftInstllation/multicraft/panel/protected/config/config.php.dist 
 
 MULTI=$(expect -c "
 set timeout 10
