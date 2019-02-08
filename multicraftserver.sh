@@ -1,24 +1,73 @@
 #!/bin/bash
 set -e
 
-DAEMONNUM=1
-EMAIL=some@email.com
-NAME="blah"
-DOMAIN="thewebsite.com"
-KEY="no"
+clear
 export DEBIAN_FRONTEND=noninteractive
-PW="P@ssW0rD"
 #
 PANELDB="multicraft_panel"
-PPASSWDDB="${PW}panel"
-#
 DAEMONDB="multicraft_daemon"
-DPASSWDDB="${PW}daemon"
+#
+gatherEmail () {
+	echo "Enter the SYSADMIN email address, followed by [ENTER]:";echo -n ">"
+	read EMAIL
+	regex="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
+	if [ -z "$EMAIL" ]; then
+		gatherEmail
+	elif ! [[ $EMAIL =~ $regex ]] ; then
+    	gatherEmail
+	fi
 
+}
+gatherDomain () {
+	echo "Enter the FQDN of the server (i.e. thewebsite.com), followed by [ENTER]:";echo -n ">"
+	read DOMAIN
+	if [ -z "$DOMAIN" ]; then
+		gatherDomain
+	fi
+}
+gatherDaemon () {
+		echo "Enter the daemon number for this instance (if this is the only instance running here type '1'), followed by [ENTER]:";echo -n ">"
+	read DAEMONNUM
+	if [ -z "$DAEMONNUM" ]; then
+		gatherDaemon
+	fi
+}
+gatherKey () {
+	echo "Enter the Minecraft Key if you have one (else type 'no'), followed by [ENTER]:";echo -n ">"
+	read KEY
+	if [ -z "$KEY" ]; then
+		gatherKey
+	fi
+}
+gatherPw () {
+	echo -n "Enter a complex 8 character password, followed by [ENTER]:";echo -n ">"
 
+	IFS= read -r PW
+	LEN=${#PW}
+	if [ "$LEN" -lt 8 ]; then
+		printf "%s is smaller than 8 characters\n" "$PW"
+		gatherPw
+	fi
+	if [ -z "$(printf %s "$PW" | tr -d "[:alnum:]")" ]; then
+		printf "%s only contains ASCII letters and digits\n" "$PW"
+		gatherPw
+	fi
+	PPASSWDDB="${PW}panel"
+	DPASSWDDB="${PW}daemon"
+}
+
+gatherDaemon;gatherDomain;gatherEmail;gatherKey;gatherPw
+#
+echo "This is the info you entered:"
+echo;echo "SYSADMIN email: ${EMAIL}"
+echo "Your domain name: ${DOMAIN}"
+echo "Daemon number: ${DAEMONNUM}"
+echo "Minecraft key: ${KEY}"
+echo;read -n 1 -s -r -p "Hit [ENTER] to continue or CTRL=c to cancel"
+ 
 apt-get update -y&&apt-get install -y vim software-properties-common apache2 phpmyadmin mysql-server php libapache2-mod-php php-mcrypt php-mysql zip default-jre -y&&service mysql restart
 
-echo "ServerName ${NAME}" >> /etc/apache2/apache2.conf&&service apache2 restart
+echo "ServerName ${DOMAIN}" >> /etc/apache2/apache2.conf&&service apache2 restart
 
 apt-get install -y dialog expect
 
@@ -167,13 +216,9 @@ clear
 
 echo;echo
 echo "Go to the web panel: http://your.address/multicraft/install.php"
+echo "STOP! Copy and don't lose the following passwords:"
 echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
 echo
-
-
-
-
-
 
 
