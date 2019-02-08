@@ -215,6 +215,3 @@ echo "STOP! Copy and don't lose the following passwords:"
 echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
 echo
-
-/home/minecraft/multicraft/bin/multicraft start
-
