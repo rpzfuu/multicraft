@@ -149,11 +149,19 @@ mysql -uroot -p${PW} -e "CREATE DATABASE ${DAEMONDB} /*\!40100 DEFAULT CHARACTER
 mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPASSWDDB}';"
 mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
 mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
-
+sed -i 's/dbUser =*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
+sed -i 's/dbPassword =*/dbPassword = P@ssW0rDdaemon/' /home/minecraft/multicraft/multicraft.conf
 clear
 echo;echo
 echo "Go to the web panel: http://your.address/multicraft/install.php"
 echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
-
 echo
+
+
+
+/home/minecraft/multicraft/bin/multicraft start
+
+
+
+
