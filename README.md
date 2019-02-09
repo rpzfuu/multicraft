@@ -1,5 +1,6 @@
-# multicraft
-From Ubuntu Server, run:
+# Multicraft Fast Install for Ubuntu 16.04
+
+From root or sudo on Ubuntu Server, run:
 
 curl https://raw.githubusercontent.com/se7enack/multicraft/master/multicraftserver.sh > multicraftserver.sh&&bash ./multicraftserver.sh
 
