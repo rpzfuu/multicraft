@@ -3,92 +3,76 @@ set -e
 
 clear
 export DEBIAN_FRONTEND=noninteractive
-
+#
 PANELDB="multicraft_panel"
 DAEMONDB="multicraft_daemon"
-
-# Function to gather email input
-gatherEmail() {
-    echo "Enter the SYSADMIN email address, followed by [ENTER]:"
-    echo -n ">"
+#
+gatherEmail () {
+    echo "Enter the SYSADMIN email address, followed by [ENTER]:";echo -n ">"
     read EMAIL
     regex="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
-    if [ -z "$EMAIL" ] || ! [[ $EMAIL =~ $regex ]]; then
+    if [ -z "$EMAIL" ]; then
+        gatherEmail
+    elif ! [[ $EMAIL =~ $regex ]] ; then
         gatherEmail
     fi
 }
-
-# Function to gather domain input
-gatherDomain() {
-    echo "Enter the FQDN of the server (i.e. thewebsite.com), followed by [ENTER]:"
-    echo -n ">"
+gatherDomain () {
+    echo "Enter the FQDN of the server (i.e. thewebsite.com), followed by [ENTER]:";echo -n ">"
     read DOMAIN
     if [ -z "$DOMAIN" ]; then
         gatherDomain
     fi
 }
-
-# Function to gather daemon number input
-gatherDaemon() {
-    echo "Enter the daemon number for this instance (if this is the only instance running here type '1'), followed by [ENTER]:"
-    echo -n ">"
+gatherDaemon () {
+    echo "Enter the daemon number for this instance (if this is the only instance running here type '1'), followed by [ENTER]:";echo -n ">"
     read DAEMONNUM
     if [ -z "$DAEMONNUM" ]; then
         gatherDaemon
     fi
 }
-
-# Function to gather Minecraft key input
-gatherKey() {
-    echo "Enter the Minecraft Key if you have one (else type 'no'), followed by [ENTER]:"
-    echo -n ">"
+gatherKey () {
+    echo "Enter the Minecraft Key if you have one (else type 'no'), followed by [ENTER]:";echo -n ">"
     read KEY
     if [ -z "$KEY" ]; then
         gatherKey
     fi
 }
+gatherPw () {
+    echo -n "Enter a complex 8 character password, followed by [ENTER]:";echo -n ">"
 
-# Function to gather password input
-gatherPw() {
-    echo -n "Enter a complex 8 character password, followed by [ENTER]:"
-    echo -n ">"
     IFS= read -r PW
     LEN=${#PW}
-    if [ "$LEN" -lt 8 ] || [ -z "$(printf %s "$PW" | tr -d "[:alnum:]")" ]; then
-        echo "Password must be at least 8 characters long and contain special characters."
+    if [ "$LEN" -lt 8 ]; then
+        printf "%s is smaller than 8 characters\n" "$PW"
+        gatherPw
+    fi
+    if [ -z "$(printf %s "$PW" | tr -d "[:alnum:]")" ]; then
+        printf "%s only contains ASCII letters and digits\n" "$PW"
         gatherPw
     fi
     PPASSWDDB="${PW}panel"
     DPASSWDDB="${PW}daemon"
 }
 
-# Gather inputs
-gatherDaemon
-gatherDomain
-gatherEmail
-gatherKey
-gatherPw
-
-# Display gathered information
+gatherDaemon;gatherDomain;gatherEmail;gatherKey;gatherPw
+#
 echo "This is the info you entered:"
-echo
-echo "SYSADMIN email: ${EMAIL}"
+echo;echo "SYSADMIN email: ${EMAIL}"
 echo "Your domain name: ${DOMAIN}"
 echo "Daemon number: ${DAEMONNUM}"
 echo "Minecraft key: ${KEY}"
-echo
-read -n 1 -s -r -p "Hit [ENTER] to continue or CTRL+C to cancel"
+echo;read -n 1 -s -r -p "Hit [ENTER] to continue or CTRL=c to cancel"
 
 # Install necessary packages
 apt-get update -y
-apt-get install -y vim software-properties-common apache2 phpmyadmin mysql-server php libapache2-mod-php php-mcrypt php-mysql zip default-jre dialog expect
+apt-get install -y vim software-properties-common apache2 mysql-server php libapache2-mod-php php-mysql zip default-jre certbot python3-certbot-apache dialog expect
 
-# Restart MySQL service
+# Restart services
 service mysql restart
-
-# Configure Apache
-echo "ServerName ${DOMAIN}" >> /etc/apache2/apache2.conf
 service apache2 restart
+
+echo "ServerName ${DOMAIN}" >> /etc/apache2/apache2.conf && service apache2 restart
 
 # Secure MySQL installation
 SECURE_MYSQL=$(expect -c "
@@ -96,7 +80,7 @@ set timeout 10
 spawn mysql_secure_installation
 expect \"Press y|Y for Yes, any other key for No:\"
 send \"y\r\"
-expect \"Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG\"
+expect \"Please enter 0 = LOW, 1 = MEDIUM and 2 = STRONG:\"
 send \"1\r\"
 expect \"New password:\"
 send \"$PW\r\"
@@ -116,33 +100,31 @@ expect eof
 ")
 echo "$SECURE_MYSQL"
 
-# Update Apache configuration
+# Configure Apache
 sed -i 's/.*irectoryIndex.*/DirectoryIndex index.php index.html index.cgi index.pl index.xhtml index.htm/' /etc/apache2/mods-enabled/dir.conf
 service apache2 restart
 
-# Install Certbot
-add-apt-repository -y ppa:certbot/certbot
-apt-get update
-apt-get install python-certbot-apache -y
-
-# Configure Certbot for SSL
+# Configure Certbot
 CERTBOT=$(expect -c "
 set timeout 10
 spawn certbot --apache -d ${DOMAIN}
-expect \"*cancel):\"
+expect \"Enter email address (used for urgent renewal and security notices):\"
 send \"$EMAIL\r\"
 expect \"(A)gree/(C)ancel:\"
 send \"a\r\"
 expect \"(Y)es/(N)o:\"
 send \"n\r\"
+expect \"Please choose whether or not to redirect HTTP traffic to HTTPS:\"
+send \"2\r\"
 expect eof
 ")
 echo "$CERTBOT"
 
-# Start MySQL service
+# Start MySQL service and setup databases
 service mysql start
+mkdir -p /run/dbus
+dbus-daemon --system
 
-# Create necessary databases and users
 mysql -uroot -p${PW} -e "CREATE DATABASE ${PANELDB} /*\!40100 DEFAULT CHARACTER SET utf8 */;"
 mysql -uroot -p${PW} -e "CREATE USER ${PANELDB}@localhost IDENTIFIED BY '${PPASSWDDB}';"
 mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${PANELDB}.* TO '${PANELDB}'@'localhost';"
@@ -153,21 +135,18 @@ mysql -uroot -p${PW} -e "CREATE USER ${DAEMONDB}@localhost IDENTIFIED BY '${DPAS
 mysql -uroot -p${PW} -e "GRANT ALL PRIVILEGES ON ${DAEMONDB}.* TO '${DAEMONDB}'@'localhost';"
 mysql -uroot -p${PW} -e "FLUSH PRIVILEGES;"
 
-# Download and install Multicraft
+# Download and setup Multicraft
 cd ~
 mkdir MulticraftInstallation
 cd MulticraftInstallation
 
 wget https://www.multicraft.org/download/linux64 -O multicraft.tar.gz
 tar xvzf multicraft.tar.gz
-
 cd multicraft
 
-# Update Multicraft configuration
-sed -i -e "/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon'/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel'/" /root/MulticraftInstallation/multicraft/panel/protected/config/config.php.dist 
+sed -i -e "/daemon_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_daemon'\,/ ; /panel_db/ s/sqlite:.*/mysql:host=127.0.0.1;dbname=multicraft_panel'\,/" /root/MulticraftInstallation/multicraft/panel/protected/config/config.php.dist 
 sed -i -e '/panel_db_user/ s/root/multicraft_panel/ ; /daemon_db_user/ s/root/multicraft_daemon/' /root/MulticraftInstallation/multicraft/panel/protected/config/config.php.dist 
 
-# Run Multicraft setup
 MULTI=$(expect -c "
 set timeout 10
 spawn ./setup.sh
@@ -214,25 +193,22 @@ send \"$PW\r\"
 expect \"Path to java program:\"
 send \"\r\"
 expect \"Path to zip program:\"
-send \"\r\"
+send \"\r\" 
 expect \"Press [Enter] to continue.\"
-send \"\r\"
+send \"\r\" 
 expect \"Save entered settings?\"
-send \"\r\"
+send \"\r\" 
 expect eof
 ")
 echo "$MULTI"
 
-# Final Multicraft configuration
 sed -i 's/dbUser.*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
 sed -i '/^password/ d' /home/minecraft/multicraft/multicraft.conf
 sed -i "s/dbPassword.*/dbPassword = $DPASSWDDB/" /home/minecraft/multicraft/multicraft.conf
 clear
 
-# Display final instructions
-echo
+echo;echo
 echo "Go to the web panel: http://your.address/multicraft/install.php"
 echo "STOP! Copy and don't lose the following passwords:"
 echo "$PANELDB: $PANELDB / $PPASSWDDB"
 echo "$DAEMONDB: $DAEMONDB / $DPASSWDDB"
-echo
