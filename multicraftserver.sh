@@ -202,6 +202,10 @@ expect eof
 ")
 echo "$MULTI"
 
+# Secure the protected directory
+echo "Order allow,deny
+Deny from all" > /var/www/html/multicraft/protected/.htaccess
+
 sed -i 's/dbUser.*/dbUser = multicraft_daemon/' /home/minecraft/multicraft/multicraft.conf
 sed -i '/^password/ d' /home/minecraft/multicraft/multicraft.conf
 sed -i "s/dbPassword.*/dbPassword = $DPASSWDDB/" /home/minecraft/multicraft/multicraft.conf
